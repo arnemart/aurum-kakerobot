@@ -1,35 +1,87 @@
-var request = require('request');
-var ICalParser = require('cozy-ical').ICalParser;
-var mailConfig = require('./mail-config')
-var mailer = require('nodemailer').createTransport(mailConfig);
+const request = require('request')
+const ICalParser = require('cozy-ical').ICalParser
+const nodemailer = require('nodemailer')
+const { WebClient } = require('@slack/web-api')
 
-request('http://calendar.google.com/calendar/ical/aurumintern@gmail.com/public/basic.ics', function(err, response, body) {
-  var parser = new ICalParser();
-  var tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
+/*
+  Config file should look like this:
+
+module.exports = {
+  calendarFeed: 'http://url.com',
+  cc: 'address@cc.com, anotheraddress@cc.com',
+  mail: {
+    host: 'email.host.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: 'username',
+      pass: 'password'
+    }
+  },
+  slack: {
+    token: 'abc-def-etc',
+    channel: 'channel-name'
+  }
+}
+
+*/
+
+const config = require('./config')
+
+const kakeRegex = /(pr)?øv(e|else|ing)/i
+
+request(config.calendarFeed, function(err, response, body) {
+  const parser = new ICalParser()
+  const today = new Date()
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
 
   parser.parseString(body, function (err, result) {
     result.subComponents.forEach(function(c) {
-      var event = c.model;
-      if (
-        event.startDate
-          && event.summary.match(/(pr)?øv(e|else|ing)/i)
-          && event.startDate.getYear() == tomorrow.getYear()
-          && event.startDate.getMonth() == tomorrow.getMonth()
-          && event.startDate.getDate() == tomorrow.getDate()
-      ) {
-        var matches = event.description.match(/([12])\.? *(sopran|alt|tenor|bass).*(kake|kaffe|pausekos)/i);
+      const event = c.model
+
+      const isTomorrow = event.startDate
+            && event.summary.match(kakeRegex)
+            && event.startDate.getYear() == tomorrow.getYear()
+            && event.startDate.getMonth() == tomorrow.getMonth()
+            && event.startDate.getDate() == tomorrow.getDate()
+
+      const isToday = event.startDate
+            && event.summary.match(kakeRegex)
+            && event.startDate.getYear() == today.getYear()
+            && event.startDate.getMonth() == today.getMonth()
+            && event.startDate.getDate() == today.getDate()
+
+      if (isToday || isTomorrow) {
+        const matches = event.description.match(/([12])\.? *(sopran|alt|tenor|bass).*(kake|kaffe|pausekos)/i);
         if (matches) {
-          var stemme = matches[2].toLowerCase();
-          var stemmegruppe = matches[1] + '. ' + stemme;
-          mailer.sendMail({
-            from: 'Kake Robot <kakerobot@kammerkoret-aurum.no>',
-            to: stemme + matches[1] + '@kammerkoret-aurum.no',
-            subject: stemmegruppe + ' har kakeansvar!',
-            text: 'Hei!\n\nHusk at ' + stemmegruppe + ' skal ta med kaffe/kake/snop etc på øvelsen i morgen!\n\nmvh,\nAurums trofaste kakerobot'
-          });
+          const stemme = matches[2].toLowerCase()
+          const stemmegruppe = matches[1] + '. ' + stemme
+          const messageText = `I ${isToday ? 'dag' : 'morgen'} er det øvelse${event.location ? ' på ' + event.location : ''} og det er ${stemmegruppe} som skal ta med kaffe/kake/snop/etc.`
+
+          if (isTomorrow) {
+            let mail = {
+              from: 'Kake Robot <kakerobot@kammerkoret-aurum.no>',
+              to: stemme + matches[1] + '@kammerkoret-aurum.no',
+              subject: stemmegruppe + ' har kakeansvar!',
+              text: `Hei!\n\n${messageText}\n\nmvh,\nAurums trofaste kakerobot`
+            }
+
+            if (config.cc) {
+              mail.cc = config.cc
+            }
+
+            const mailer = nodemailer.createTransport(config.mail)
+            mailer.sendMail(mail)
+          }
+
+          const slackClient = new WebClient(config.slack.token)
+          slackClient.chat.postMessage({
+            text: /* <!channel> */ `Hei! ${messageText}`,
+            channel: config.slack.channel
+          })
         }
       }
-    });
-  });
-});
+    })
+  })
+})
