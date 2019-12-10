@@ -73,12 +73,15 @@ request(config.calendarFeed, (err, response, body) => {
               mail.cc = config.cc
             }
 
-            const mailer = nodemailer.createTransport(config.mail)
-            mailer.sendMail(mail)
+            if (config.dontSendAnything) {
+              console.log('Mail:', mail)
+            } else {
+              const mailer = nodemailer.createTransport(config.mail)
+              mailer.sendMail(mail)
+            }
           }
 
           const slackClient = new WebClient(config.slack.token)
-          const slackbotClient = new WebClient(config.slack.botToken)
 
           let groupId
           try {
@@ -89,10 +92,15 @@ request(config.calendarFeed, (err, response, body) => {
 
           const slackMessage = (groupId ? `<!subteam^${groupId}> ` : '') + `Hei! ${messageText}`
 
-          slackbotClient.chat.postMessage({
-            text: slackMessage,
-            channel: config.slack.channel
-          })
+          if (config.dontSendAnything) {
+            console.log('Slack:', slackMessage)
+          } else {
+            const slackbotClient = new WebClient(config.slack.botToken)
+            slackbotClient.chat.postMessage({
+              text: slackMessage,
+              channel: config.slack.channel
+            })
+          }
         }
       }
     })
