@@ -5,6 +5,7 @@ const { WebClient } = require('@slack/web-api')
 
 /*
   Config file should look like this:
+  You need one slack token to list groups and one bot token to post a message.
 
 module.exports = {
   calendarFeed: 'http://url.com',
@@ -20,6 +21,7 @@ module.exports = {
   },
   slack: {
     token: 'abc-def-etc',
+    botToken: 'abc-def-etc',
     channel: 'channel-name'
   }
 }
@@ -30,14 +32,14 @@ const config = require('./config')
 
 const kakeRegex = /(pr)?øv(e|else|ing)/i
 
-request(config.calendarFeed, function(err, response, body) {
+request(config.calendarFeed, (err, response, body) => {
   const parser = new ICalParser()
   const today = new Date()
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
 
-  parser.parseString(body, function (err, result) {
-    result.subComponents.forEach(function(c) {
+  parser.parseString(body, (err, result) => {
+    result.subComponents.forEach(async (c) => {
       const event = c.model
 
       const isTomorrow = event.startDate
@@ -76,8 +78,19 @@ request(config.calendarFeed, function(err, response, body) {
           }
 
           const slackClient = new WebClient(config.slack.token)
-          slackClient.chat.postMessage({
-            text: /* <!channel> */ `Hei! ${messageText}`,
+          const slackbotClient = new WebClient(config.slack.botToken)
+
+          let groupId
+          try {
+            const slackGroups = await slackClient.usergroups.list({ include_users: false })
+            const groupName = stemme.slice(0, 1) + matches[1]
+            groupId = slackGroups.usergroups.filter(g => g.handle == groupName)[0].id
+          } catch (e) { }
+
+          const slackMessage = (groupId ? `<!subteam^${groupId}> ` : '') + `Hei! ${messageText}`
+
+          slackbotClient.chat.postMessage({
+            text: slackMessage,
             channel: config.slack.channel
           })
         }
