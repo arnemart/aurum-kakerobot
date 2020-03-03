@@ -59,7 +59,8 @@ request(config.calendarFeed, (err, response, body) => {
         if (matches) {
           const stemme = matches[2].toLowerCase()
           const stemmegruppe = matches[1] + '. ' + stemme
-          const messageText = `I ${isToday ? 'dag' : 'morgen'} er det øvelse${event.location ? ' på ' + event.location : ''} og det er ${stemmegruppe} som skal ta med kaffe/kake/snop/etc.`
+          const prep = event.location && event.location.match(/kirken?\b/i) ? ' i ' : ' på '
+          const messageText = `I ${isToday ? 'dag' : 'morgen'} er det øvelse${event.location ? prep + event.location : ''} og det er ${stemmegruppe} som skal ta med kaffe/kake/snop/etc.`
 
           if (isTomorrow) {
             let mail = {
