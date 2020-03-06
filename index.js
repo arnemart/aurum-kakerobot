@@ -31,6 +31,7 @@ module.exports = {
 const config = require('./config')
 
 const kakeRegex = /(pr)?øv(e|else|ing)/i
+const ikkeKakeRegex = /\bikke (pr)?øv(e|else|ing)/i
 
 request(config.calendarFeed, (err, response, body) => {
   const parser = new ICalParser()
@@ -44,12 +45,14 @@ request(config.calendarFeed, (err, response, body) => {
 
       const isTomorrow = event.startDate
             && event.summary.match(kakeRegex)
+            && !event.summary.match(ikkeKakeRegex)
             && event.startDate.getYear() == tomorrow.getYear()
             && event.startDate.getMonth() == tomorrow.getMonth()
             && event.startDate.getDate() == tomorrow.getDate()
 
       const isToday = event.startDate
             && event.summary.match(kakeRegex)
+            && !event.summary.match(ikkeKakeRegex)
             && event.startDate.getYear() == today.getYear()
             && event.startDate.getMonth() == today.getMonth()
             && event.startDate.getDate() == today.getDate()
