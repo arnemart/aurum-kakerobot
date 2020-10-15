@@ -57,6 +57,15 @@ if (rehersalToday) {
   sendSlackMessage(rehersalToday, korumToday, true)
 }
 
+function findEvent(date, matchThis, butDontMatchThis = null) {
+  return event => event.start
+    && event.start.getYear() == date.getYear()
+    && event.start.getMonth() == date.getMonth()
+    && event.start.getDate() == date.getDate()
+    && event.summary.match(matchThis)
+    && !event.summary.match(butDontMatchThis)
+}
+
 async function sendSlackMessage(rehersalEvent, korumEvent, isToday) {
   const { message, stemme, number } = createMessage(rehersalEvent, korumEvent, isToday)
 
@@ -123,15 +132,6 @@ function createMessage(event, korumEvent, isToday) {
       message: `${messageStart}.`
     }
   }
-}
-
-function findEvent(date, matchThis, butDontMatchThis = null) {
-  return event => event.start
-  && event.start.getYear() == date.getYear()
-  && event.start.getMonth() == date.getMonth()
-  && event.start.getDate() == date.getDate()
-  && event.summary.match(matchThis)
-  && !event.summary.match(butDontMatchThis)
 }
 
 function startTime(event) {
