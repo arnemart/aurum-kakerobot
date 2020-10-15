@@ -31,31 +31,35 @@ export default {
 
 import config from './config.mjs'
 
-const ovelseRegex = /(pr)?øv(e|else|ing)/i
-const ikkeOvelseRegex = /\bikke (pr)?øv(e|else|ing)/i
-const korumRegex = /korum/i
-const ikkeKorumRegex = /ikke korum/i
+async function doTheThing() {
+  const ovelseRegex = /(pr)?øv(e|else|ing)/i
+  const ikkeOvelseRegex = /\bikke (pr)?øv(e|else|ing)/i
+  const korumRegex = /korum/i
+  const ikkeKorumRegex = /ikke korum/i
 
-const today = new Date()
-const tomorrow = new Date()
-tomorrow.setDate(tomorrow.getDate() + 1)
+  const today = new Date()
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
 
-const events = Object.values(await ical.async.fromURL(config.calendarFeed))
-  .flatMap(event => event.recurrences ? Object.values(event.recurrences) : event)
+  const events = Object.values(await ical.async.fromURL(config.calendarFeed))
+    .flatMap(event => event.recurrences ? Object.values(event.recurrences) : event)
 
-const korumTomorrow = events.find(findEvent(tomorrow, korumRegex, ikkeKorumRegex))
-const rehersalTomorrow = events.find(findEvent(tomorrow, ovelseRegex, ikkeOvelseRegex))
-const korumToday = events.find(findEvent(today, korumRegex, ikkeKorumRegex))
-const rehersalToday = events.find(findEvent(today, ovelseRegex, ikkeOvelseRegex))
+  const korumTomorrow = events.find(findEvent(tomorrow, korumRegex, ikkeKorumRegex))
+  const rehersalTomorrow = events.find(findEvent(tomorrow, ovelseRegex, ikkeOvelseRegex))
+  const korumToday = events.find(findEvent(today, korumRegex, ikkeKorumRegex))
+  const rehersalToday = events.find(findEvent(today, ovelseRegex, ikkeOvelseRegex))
 
-if (rehersalTomorrow) {
-  sendSlackMessage(rehersalTomorrow, korumTomorrow, false)
-  sendEmail(rehersalTomorrow, korumTomorrow)
+  if (rehersalTomorrow) {
+    sendSlackMessage(rehersalTomorrow, korumTomorrow, false)
+    sendEmail(rehersalTomorrow, korumTomorrow)
+  }
+
+  if (rehersalToday) {
+    sendSlackMessage(rehersalToday, korumToday, true)
+  }
 }
 
-if (rehersalToday) {
-  sendSlackMessage(rehersalToday, korumToday, true)
-}
+doTheThing()
 
 function findEvent(date, matchThis, butDontMatchThis = null) {
   return event => event.start
