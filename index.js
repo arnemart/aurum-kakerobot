@@ -1,6 +1,6 @@
-import ical from 'node-ical'
-import nodemailer from 'nodemailer'
-import { WebClient } from '@slack/web-api'
+const ical = require('node-ical')
+const nodemailer = require('nodemailer')
+const { WebClient } = require('@slack/web-api')
 
 /*
 Config file should look like this:
@@ -29,7 +29,7 @@ export default {
 
 */
 
-import config from './config.mjs'
+const config = require('./config')
 
 async function doTheThing() {
   const ovelseRegex = /(pr)?øv(e|else|ing)/i
