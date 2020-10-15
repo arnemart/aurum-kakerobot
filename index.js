@@ -42,7 +42,7 @@ async function doTheThing() {
   tomorrow.setDate(tomorrow.getDate() + 1)
 
   const events = Object.values(await ical.async.fromURL(config.calendarFeed))
-    .flatMap(event => event.recurrences ? Object.values(event.recurrences) : event)
+    .reduce((events, event) => event.recurrences ? events.concat(Object.values(event.recurrences)) : events.concat(event), [])
 
   const korumTomorrow = events.find(findEvent(tomorrow, korumRegex, ikkeKorumRegex))
   const rehersalTomorrow = events.find(findEvent(tomorrow, ovelseRegex, ikkeOvelseRegex))
