@@ -32,7 +32,7 @@ export default {
 const config = require('./config')
 
 async function doTheThing() {
-  const ovelseRegex = /(pr)?øv(e|else|ing)/i
+  const ovelseRegex = /(^|\n|\W)(pr)?øv(e|else|ing)/i
   const ikkeOvelseRegex = /\bikke (pr)?øv(e|else|ing)/i
   const korumRegex = /korum/i
   const ikkeKorumRegex = /ikke korum/i
@@ -73,9 +73,9 @@ function findEvent(date, matchThis, butDontMatchThis = null) {
 async function sendSlackMessage(rehersalEvent, korumEvent, isToday) {
   const { message, stemme, number } = createMessage(rehersalEvent, korumEvent, isToday)
 
-  const groupName = stemme.slice(0, 1) + number
   let groupId
   try {
+    const groupName = stemme.slice(0, 1) + number
     const slackClient = new WebClient(config.slack.token)
     const slackGroups = await slackClient.usergroups.list({ include_users: false })
     groupId = slackGroups.usergroups.filter(g => g.handle == groupName)[0].id
