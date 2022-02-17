@@ -127,7 +127,7 @@ function createMessage(event, korumEvent, isToday) {
     const stemme = matches[2].toLowerCase()
     const number = matches[1]
     return {
-      message: `${messageStart}, og det er ${number}. ${stemme} som skal ta med kaffe/kake/snop/etc. Husk: E det korona, pakk aillt i porsjona!`,
+      message: `${messageStart}, og det er ${number}. ${stemme} som skal ta med kaffe/kake/snop/etc.`,
       stemme,
       number
     }
