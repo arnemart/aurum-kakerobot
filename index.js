@@ -127,7 +127,7 @@ function createMessage(event, korumEvent, isToday) {
     const stemme = matches[2].toLowerCase()
     const number = matches[1]
     return {
-      message: `${messageStart}, og det er ${number}. ${stemme} som skal ta med kaffe/kake/snop/etc.`,
+      message: `${messageStart}, og det er ${number}. ${stemme} som skal ta med kaffe/kake/snop/etc. og rigge til øving ${preStartTime(event)}.`,
       stemme,
       number
     }
@@ -140,4 +140,14 @@ function createMessage(event, korumEvent, isToday) {
 
 function startTime(event) {
   return event.start ? ` klokka ${event.start.getHours() < 10 ? '0' + event.start.getHours() : event.start.getHours()}:${event.start.getMinutes() < 10 ? '0' + event.start.getMinutes() : event.start.getMinutes()}` : ''
+}
+
+function preStartTime(event) {
+  if (event.start) {
+    const prestart = new Date(event.start)
+    prestart.setMinutes(prestart.getMinutes() - 15)
+    return `fra ${prestart.getHours() < 10 ? '0' + prestart.getHours() : prestart.getHours()}:${prestart.getMinutes() < 10 ? '0' + prestart.getMinutes() : prestart.getMinutes()}`
+  } else {
+    return "15 min før øvingsstart"
+  }
 }
