@@ -2,6 +2,6 @@
   "dependencies": {
     "@slack/web-api": "^5.12.0",
     "node-ical": "^0.12.2",
-    "nodemailer": "^6.4.14"
+    "nodemailer": "^6.4.16"
   }
 }
