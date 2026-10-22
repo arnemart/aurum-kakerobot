@@ -37,12 +37,17 @@ async function doTheThing() {
   const korumRegex = /korum/i
   const ikkeKorumRegex = /ikke korum/i
 
-  const today = new Date()
-  const tomorrow = new Date()
+  const today = process.env.FAKE_DATE ? new Date(process.env.FAKE_DATE) : new Date()
+  const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
 
+  const from = new Date(today)
+  from.setDate(from.getDate() - 1)
+  const to = new Date(today)
+  to.setDate(to.getDate() + 2)
   const events = Object.values(await ical.async.fromURL(config.calendarFeed))
-    .reduce((events, event) => event.recurrences ? events.concat(Object.values(event.recurrences)) : events.concat(event), [])
+    .filter(event => event.type == 'VEVENT')
+    .reduce((events, event) => events.concat(occurrences(event, from, to)), [])
 
   const korumTomorrow = events.find(findEvent(tomorrow, korumRegex, ikkeKorumRegex))
   const rehersalTomorrow = events.find(findEvent(tomorrow, ovelseRegex, ikkeOvelseRegex))
@@ -60,6 +65,26 @@ async function doTheThing() {
 }
 
 doTheThing()
+
+// Recurring events: edited occurrences (recurrences) plus the plain RRULE occurrences in [from, to],
+// minus cancelled (exdate) ones. Without the plain ones, weeks nobody edited were never seen.
+function occurrences(event, from, to) {
+  if (!event.rrule) {
+    return [event]
+  }
+  const result = Object.values(event.recurrences || {})
+  for (const occurrence of event.rrule.between(from, to, true)) {
+    const key = occurrence.toISOString().substring(0, 10)
+    if ((event.recurrences && event.recurrences[key]) || (event.exdate && event.exdate[key])) {
+      continue
+    }
+    // rrule repeats the UTC time; keep the series' local clock time across DST (needs TZ=Europe/Oslo)
+    const start = new Date(occurrence)
+    start.setHours(event.start.getHours(), event.start.getMinutes(), 0, 0)
+    result.push({ ...event, start })
+  }
+  return result
+}
 
 function findEvent(date, matchThis, butDontMatchThis = null) {
   return event => event.start
