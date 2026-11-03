@@ -144,7 +144,7 @@ function sendEmail(rehersalEvent, korumEvent) {
 }
 
 function createMessage(event, korumEvent, isToday) {
-  const location = event.location ? (event.location.match(/kirken?\b/i) ? ' i ' : ' på ') + event.location.split(',')[0] : ''
+  const location = event.location ? (event.location.match(/(kirken?|salen)\b/i) ? ' i ' : ' på ') + event.location.split(',')[0] : ''
   const korum = korumEvent ? ` korum${startTime(korumEvent)} og` : ''
   const messageStart = `I ${isToday ? 'dag' : 'morgen'} er det${korum} øvelse${startTime(event)}${location}`
   const matches = event.description.match(/([12])\.? *(sopran|alt|tenor|bass).*(kake|kaffe|pausekos)/i);
